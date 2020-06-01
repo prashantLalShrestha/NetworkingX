@@ -7,9 +7,9 @@ let package = Package(
     name: "NetworkingX",
     platforms: [ .iOS(.v11)],
     products: [
-        .library(
-            name: "NetworkingX",
-            targets: ["NetworkingX"]),
+        .library(name: "NetworkingX",
+                 type: .dynamic,
+                 targets: ["NetworkingX"]),
     ],
     dependencies: [
     ],
