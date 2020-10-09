@@ -10,6 +10,7 @@ import Foundation
 
 public enum NetworkError: Error {
     case error(statusCode: Int, data: Data?)
+    case unacceptableStatusCode(code: Int)
     case notConnected
     case cancelled
     case generic(Error)
@@ -33,10 +34,15 @@ public protocol NetworkService {
 }
 
 public protocol NetworkSessionManager {
+    var acceptableStatusCodes: [Int] { get }
     typealias CompletionHandler = (Data?, URLResponse?, Error?) -> Void
     
     func request(_ request: URLRequest,
                  completion: @escaping CompletionHandler) -> NetworkCallable
+}
+
+public extension NetworkSessionManager {
+    var acceptableStatusCodes: [Int] { return Array(200..<300) }
 }
 
 public protocol NetworkErrorLogger {
@@ -63,21 +69,39 @@ public final class DefaultNetworkService {
     
     private func request(request: URLRequest, completion: @escaping CompletionHandler) -> NetworkCallable {
         
-        let sessionDataTask = sessionManager.request(request) { data, response, requestError in
-            
-            if let requestError = requestError {
-                var error: NetworkError
-                if let response = response as? HTTPURLResponse {
-                    error = .error(statusCode: response.statusCode, data: data)
+        let sessionDataTask = sessionManager.request(request) { [self] data, response, requestError in
+            if let response = response as? HTTPURLResponse {
+                if sessionManager.acceptableStatusCodes.contains(response.statusCode) {
+                    self.logger.log(responseData: data, response: response)
+                    completion(.success(data))
                 } else {
-                    error = self.resolve(error: requestError)
+                    var error: NetworkError
+                    if let data = data {
+                        error = .error(statusCode: response.statusCode, data: data)
+                    } else if let requestError = requestError {
+                        error = self.resolve(error: requestError)
+                    } else {
+                        error = .unacceptableStatusCode(code: response.statusCode)
+                    }
+                    
+                    self.logger.log(error: error)
+                    completion(.failure(error))
                 }
-                
-                self.logger.log(error: error)
-                completion(.failure(error))
             } else {
-                self.logger.log(responseData: data, response: response)
-                completion(.success(data))
+                if let requestError = requestError {
+                    var error: NetworkError
+                    if let response = response as? HTTPURLResponse {
+                        error = .error(statusCode: response.statusCode, data: data)
+                    } else {
+                        error = self.resolve(error: requestError)
+                    }
+                    
+                    self.logger.log(error: error)
+                    completion(.failure(error))
+                } else {
+                    self.logger.log(responseData: data, response: response)
+                    completion(.success(data))
+                }
             }
         }
     
