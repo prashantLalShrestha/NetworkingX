@@ -98,7 +98,11 @@ extension DefaultDataTransferService: DataTransferService {
 
     private func resolve(networkError error: NetworkError) -> DataTransferError {
         let resolvedError = self.errorResolver.resolve(error: error)
-        return resolvedError is NetworkError ? .networkFailure(error) : .resolvedNetworkFailure(resolvedError)
+        if let resolvedError = resolvedError as? NetworkError {
+            return .networkFailure(resolvedError)
+        } else {
+            return .resolvedNetworkFailure(resolvedError)
+        }
     }
 }
 
