@@ -71,7 +71,7 @@ public final class DefaultNetworkService {
         
         let sessionDataTask = sessionManager.request(request) { [self] data, response, requestError in
             if let response = response as? HTTPURLResponse {
-                if sessionManager.acceptableStatusCodes.contains(response.statusCode) {
+                if self.sessionManager.acceptableStatusCodes.contains(response.statusCode) {
                     self.logger.log(responseData: data, response: response)
                     completion(.success(data))
                 } else {

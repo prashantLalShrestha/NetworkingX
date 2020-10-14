@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "NetworkingX"
-  spec.version = "1.2.1"
+  spec.version = "1.2.2"
   spec.summary = "NetworkingX is just a simple Networking utility Module"
 
   spec.description = <<-DESC
