@@ -156,3 +156,31 @@ public class XMLResponseDecoder: ResponseDecoder {
         return try xmlDecoder.decode(T.self, from: data)
     }
 }
+
+
+
+#if swift(>=5.0)
+import Combine
+
+@available(iOS 13.0, OSX 10.15, tvOS 13.0, watchOS 6.0, *)
+public extension DataTransferService {
+    
+    func request<T: Decodable, E: ResponseRequestable>(with endpoint: E) -> AnyPublisher<T, DataTransferError> where E.Response == T {
+        return Future() { promise in
+            self.request(with: endpoint) { (result) in
+                promise(result)
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    func request<E: ResponseRequestable>(with endpoint: E) -> AnyPublisher<Void, DataTransferError> where E.Response == Void {
+        return Future() { promise in
+            self.request(with: endpoint) { (result) in
+                promise(result)
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+}
+#endif
