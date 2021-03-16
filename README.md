@@ -190,5 +190,5 @@ task?.resume()
 
 ```
 
-The main objective of this framework is to separate the networking protocols in smaller steps, giving us extra flexibility in code management expecially in, `Clean Archgitecture`.
+The main objective of this framework is to separate the networking protocols in smaller steps, giving us extra flexibility in code management expecially in, `Clean Architecture`.
 
