@@ -3,11 +3,16 @@
 //  NetworkingX
 //
 //  Created by Prashant Shrestha on 5/24/20.
-//  Copyright © 2020 Inficare. All rights reserved.
+//  Copyright © 2020 Prashant Shrestha. All rights reserved.
 //
 
 import Foundation
 
+/**
+ A common error representation for DataTransferService protocol.
+ 
+ On using `DataTransferService` protocol for network calls, please use `DataTransferError` to represent any errors for commonality.
+ */
 public enum DataTransferError: Error {
     case noResponse
     case parsing(Error)
@@ -15,35 +20,80 @@ public enum DataTransferError: Error {
     case resolvedNetworkFailure(Error)
 }
 
+/**
+ A protocol service for network data calls.
+ */
 public protocol DataTransferService {
     typealias CompletionHandler<T> = (Result<T, DataTransferError>) -> Void
-
+    
+    /// initiates network request  using NetworkService protocol.
+    /// - Parameters:
+    ///   - endpoint: request `Endpoint`
+    ///   - completion: result of network request completion. On success, the data is parsed in `T: Decodable` type. On failure, errors are resolved to `DataTransferError` case.
+    /// - returns: a NetworkCallable object which is basically URLSessionTask. Typically, you can use it to resume, cancel, suspend the network requests.
     @discardableResult
     func request<T: Decodable, E: ResponseRequestable>(with endpoint: E,
                                                        completion: @escaping CompletionHandler<T>) -> NetworkCallable? where E.Response == T
+    
+    /// initiates network request  using NetworkService protocol.
+    /// - Parameters:
+    ///   - endpoint: request `Endpoint`
+    ///   - completion: result of network request completion. On success, `Void` is returned. On failure, errors are resolved to `DataTransferError` case.
+    /// - returns: a NetworkCallable object which is basically URLSessionTask. Typically, you can use it to resume, cancel, suspend the network requests.
     @discardableResult
     func request<E: ResponseRequestable>(with endpoint: E,
                                          completion: @escaping CompletionHandler<Void>) -> NetworkCallable? where E.Response == Void
 }
 
+/**
+ A protocol used for resolving the Data TransferErrors. This is also a mapper to map other Errors to common DataTransferError.
+ */
 public protocol DataTransferErrorResolver {
+    
+    /// A mapper function to map NetworkErrors to DataTransferErrors.
+    /// - Parameter error: NetworkError object. This usually comes from NetworkService as DataTransferService internally uses NetworkService for network requests.
     func resolve(error: NetworkError) -> Error
 }
 
+/**
+ A decoder protocol used to implement decoding function for `Data`.
+ */
 public protocol ResponseDecoder {
+    
+    /// decodes the `Data` object to Decodable `T` object
+    /// - Parameter data: data object.
+    /// - Throws: decoding errors.
     func decode<T: Decodable>(_ data: Data) throws -> T
 }
 
+/**
+ A protocol used to log any errors occured in data transfer protocols.
+ 
+ # Usage:
+ You can find it's usage in DataTransferService implementation classes.
+ */
 public protocol DataTransferErrorLogger {
+    
+    /// log DataTransferSevice Errors
+    /// - Parameter error: Error of type `DataTransferError`
     func log(error: Error)
 }
 
+/**
+ A default implementation of `DataTransferService`
+ */
 public final class DefaultDataTransferService {
 
     private let networkService: NetworkService
     private let errorResolver: DataTransferErrorResolver
     private let errorLogger: DataTransferErrorLogger
 
+    
+    /// `DefaultDataTransferService` Initializers`
+    /// - Parameters:
+    ///   - networkService: `NetworkService` object. It comprises network configs, session managers.
+    ///   - errorResolver: `DataTransferErrorResolver` object. default value is provided. You can also create your own `ErrorResolver` and pass on it.
+    ///   - errorLogger: `DataTransferErrorLogger` object.
     public init(with networkService: NetworkService,
                 errorResolver: DataTransferErrorResolver = DefaultDataTransferErrorResolver(),
                 errorLogger: DataTransferErrorLogger = DefaultDataTransferErrorLogger()) {
@@ -166,21 +216,11 @@ import Combine
 public extension DataTransferService {
     
     func request<T: Decodable, E: ResponseRequestable>(with endpoint: E) -> AnyPublisher<T, DataTransferError> where E.Response == T {
-        return Future() { promise in
-            self.request(with: endpoint) { (result) in
-                promise(result)
-            }
-        }
-        .eraseToAnyPublisher()
+        return Future() { self.request(with: endpoint, completion: $0) }.eraseToAnyPublisher()
     }
     
     func request<E: ResponseRequestable>(with endpoint: E) -> AnyPublisher<Void, DataTransferError> where E.Response == Void {
-        return Future() { promise in
-            self.request(with: endpoint) { (result) in
-                promise(result)
-            }
-        }
-        .eraseToAnyPublisher()
+        return Future() { self.request(with: endpoint, completion: $0) }.eraseToAnyPublisher()
     }
 }
 #endif

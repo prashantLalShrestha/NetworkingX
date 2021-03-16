@@ -3,7 +3,7 @@
 //  NetworkingXTests
 //
 //  Created by Prashant Shrestha on 5/24/20.
-//  Copyright © 2020 Inficare. All rights reserved.
+//  Copyright © 2020 Prashant Shrestha. All rights reserved.
 //
 
 import XCTest

@@ -3,11 +3,16 @@
 //  NetworkingX
 //
 //  Created by Prashant Shrestha on 5/24/20.
-//  Copyright © 2020 Inficare. All rights reserved.
+//  Copyright © 2020 Prashant Shrestha. All rights reserved.
 //
 
 import Foundation
 
+/// Type representing HTTP methods.
+///
+/// Raw `String` value is stored and compared case-sensitively, so
+/// ```
+/// HTTPMethod.get != HTTPMethod(rawValue: "get")
 public struct HTTPMethodType: RawRepresentable, Equatable, Hashable {
     public static let connect = HTTPMethodType(rawValue: "CONNECT")
     public static let delete = HTTPMethodType(rawValue: "DELETE")
@@ -26,6 +31,10 @@ public struct HTTPMethodType: RawRepresentable, Equatable, Hashable {
     }
 }
 
+/**
+ A Requestable implementation class comprising the properties required for URLRequest.
+ The generic R represents Response Type.
+ */
 public class Endpoint<R>: ResponseRequestable {
 
     public typealias Response = R
@@ -40,7 +49,19 @@ public class Endpoint<R>: ResponseRequestable {
     public var bodyParamaters: [String: Any]
     public var bodyEncoding: ParameterEncoding
     public var responseDecoder: ResponseDecoder
-
+    
+    /// Endpoint initializer
+    /// - Parameters:
+    ///   - path: api address path
+    ///   - isFullPath: if the path comprises the whole api hosted address `true` else `false`
+    ///   - method: HTTPMethod `For Example: .get, .post, etc.`
+    ///   - headerParamaters: parameters in dictionary to be included as headers. `defaultValue = [:]`
+    ///   - queryParametersEncodable: parameters of type Encodable to be added in query. `defaultValue = nil` Both queryParametersEncodable and queryParameters are merged together to form query.
+    ///   - queryParameters: parameters in dictionary to be added in query. `defaultValue = [:]` Both queryParametersEncodable and queryParameters are merged together to form query.
+    ///   - bodyParamatersEncodable: parameters of type Encodable to be sent as request body data. Both bodyParametersEncodable and bodyParameters are merged together to form body. In case of, `HTTPMethodType.get` body parameters are appended in query.
+    ///   - bodyParamaters: parameters in dictionary to be sent as request body data. Both bodyParametersEncodable and bodyParameters are merged together to form body. In case of, `HTTPMethodType.get` body parameters are appended in query.
+    ///   - bodyEncoding: type of encoding used to encode the bodyParameters into URLRequest body data.
+    ///   - responseDecoder: a `Decoder` object used to decode the response data into `Decodable` class.
     public init(path: String,
          isFullPath: Bool = false,
          method: HTTPMethodType,
@@ -64,6 +85,10 @@ public class Endpoint<R>: ResponseRequestable {
     }
 }
 
+
+/**
+ A protocol comprising the properties required to create a URLRequest.
+ */
 public protocol Requestable {
     var path: String { get }
     var isFullPath: Bool { get }
@@ -78,12 +103,18 @@ public protocol Requestable {
     func urlRequest(with networkConfig: NetworkConfigurable) throws -> URLRequest
 }
 
+/**
+ A protocol comprising the properties required to create a URLRequest. Response defines the type of Result in which the response data is decoded.
+ */
 public protocol ResponseRequestable: Requestable {
     associatedtype Response
 
     var responseDecoder: ResponseDecoder { get }
 }
 
+/**
+ An enum representation of Errors which may occur while generating the URLRequest object from Requestable.
+ */
 enum RequestGenerationError: Error {
     case components
     case invalidURL(url: URLConvertible)
@@ -94,7 +125,11 @@ enum RequestGenerationError: Error {
 }
 
 extension Requestable {
-
+    
+    /// maps the Requestable object to URL object with necessary Network Configurations
+    /// - Parameter config: default networkconfig provided through NetworkService object.
+    /// - Throws: Errors occured during generating the URL.
+    /// - Returns: URL used in URLSession task.
     func url(with config: NetworkConfigurable) throws -> URL {
 
         let baseURL = config.baseURL.absoluteString.last != "/" ? config.baseURL.absoluteString + "/" : config.baseURL.absoluteString
@@ -115,6 +150,11 @@ extension Requestable {
         return url
     }
 
+    
+    /// maps the Requestable object to URLRequest object with necessary Network Configurations
+    /// - Parameter config: default networkconfig provided through NetworkService object.
+    /// - Throws: Errors occured during generating the URLRequest.
+    /// - Returns: URLRequest object used in URLSession task.
     public func urlRequest(with config: NetworkConfigurable) throws -> URLRequest {
 
         let url = try self.url(with: config)
