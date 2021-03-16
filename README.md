@@ -54,7 +54,7 @@ public protocol NetworkConfigurable {
 ```
 
 We can create an object from it's default implementation `ApiDataNetworkConfig`.
-```
+```swift
 let config = ApiDataNetworkConfig(baseURL: URL(string: "https://url.to.api/"))
 ```
 
@@ -62,7 +62,7 @@ let config = ApiDataNetworkConfig(baseURL: URL(string: "https://url.to.api/"))
 
 A service protocols used to make HTTP requests. It's default implementation `DefaultNetworkService` wraps the `URLSession().dataTask` function. You can use this protocol to create your own implementation, for example, using `Alamofire`.
 
-```
+```swift
 public protocol NetworkService {
     typealias CompletionHandler = (Result<Data?, NetworkError>) -> Void
     
@@ -71,14 +71,14 @@ public protocol NetworkService {
 ```
 
 The above made network `config` object is used in NetworkService. We can create a NetworkService object as:
-```
+```swift
 let networkService = DefaultNetworkService(config: config)
 ```
 
 
 ### NetworkSessionManager
 NetworkSessionManager works as an interceptor in between HTTP requests. We can use this protocol to maintain the access tokens, authentications.
-```
+```swift
 public protocol NetworkSessionManager {
     var acceptableStatusCodes: [Int] { get }
     typealias CompletionHandler = (Data?, URLResponse?, Error?) -> Void
@@ -89,13 +89,13 @@ public protocol NetworkSessionManager {
 ```
 
 Typically, we use `NetworkSessionManager` in our `NetworkService` class.
-```
+```swift
 let networkService = DefaultNetworkService(config: config, sessionManager: DefaultNetworkSessionManager())
 ```
 
 ### Endpoint
 We create an endpoint for each network api calls. `Endpoint` implements the protocol `Requestable` 
-```
+```swift
 public protocol Requestable {
     var path: String { get }
     var isFullPath: Bool { get }
@@ -112,7 +112,7 @@ public protocol Requestable {
 ```
 
 As you can see in the above protocol, we will be defining our api call configurations in here. 
-```
+```swift
 struct Endpoints {
     static func authenticateUser(request: UserAuthenticationRequest) -> Endpoint<UserAuthenticationResponse> {
         return Endpoint(path: "path/of/login",
@@ -138,7 +138,7 @@ However, you can create your own Encoding implementation using this protocol and
 
 ### DataTransferService
 DataTransferService is a place where most of the work is done with the help of `Endpoint`, `NetworkService` and `ErrorResolver`.
-```
+```swift
 public protocol DataTransferService {
     typealias CompletionHandler<T> = (Result<T, DataTransferError>) -> Void
     
@@ -153,28 +153,28 @@ public protocol DataTransferService {
 ```
 
 For simplicity, you can use the default implementation `DefaultDataTransferService` as:
-```
+```swift
 let dataTransferService = DefaultDataTransferService(with: networkService)
 ```
 
 
 ### DataTransferErrorResolver
 It is used to resolve the `NetworkError` in the form of `DataTransferError`. We can create an implementation class for this protocol to map our errors.
-```
+```swift
 public protocol DataTransferErrorResolver {
     func resolve(error: NetworkError) -> Error
 }
 ```
 
 And, use it in `DefaultDataTransferService` as:
-```
+```swift
 let dataTransferService = DefaultDataTransferService(with: networkService,
                                                              errorResolver: DefaultDataTransferErrorResolver())
 ```
 
 ### Now the sweet part,
 After setting up our `NetworkConfig`, `NetworkSessionManager`, `NetworkService`, `Endpoint`, `DataTransferService`, we are now ready to make our network request,
-```
+```swift
 let request = UserAuthenticationRequest(userName: "username", loginPassword: "password")
 
 let endpoint = Endpoints.authenticateUser(request: request)
