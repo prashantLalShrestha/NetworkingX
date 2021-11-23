@@ -14,12 +14,13 @@ import Foundation
  Please use this for commonality instead of other Error objects, in case of network calls.
  */
 public enum NetworkError: Error {
-    case error(statusCode: Int, data: Data?)
-    case unacceptableStatusCode(code: Int)
-    case notConnected
     case cancelled
+    case error(statusCode: Int, data: Data?)
     case generic(Error)
     case genericMessage(String)
+    case notConnected
+    case timedOut
+    case unacceptableStatusCode(code: Int)
     case urlGeneration
 }
 
@@ -183,6 +184,7 @@ public final class DefaultNetworkService {
         switch code {
         case .notConnectedToInternet: return .notConnected
         case .cancelled: return .cancelled
+        case .timedOut: return .timedOut
         default: return .generic(error)
         }
     }
